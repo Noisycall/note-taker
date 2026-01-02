@@ -50,7 +50,6 @@ const insertBlockMap: Record<
   [KEYS.callout]: (editor) => insertCallout(editor, { select: true }),
   [KEYS.codeBlock]: (editor) => insertCodeBlock(editor, { select: true }),
   [KEYS.equation]: (editor) => insertEquation(editor, { select: true }),
-  [KEYS.excalidraw]: (editor) => insertExcalidraw(editor, {}, { select: true }),
   [KEYS.file]: (editor) => insertFilePlaceholder(editor, { select: true }),
   [KEYS.img]: (editor) =>
     insertMedia(editor, {
