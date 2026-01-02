@@ -1,7 +1,14 @@
 // @ts-ignore
-import * as React from "react";
 import type { Value } from "platejs";
 import "./App.css";
+import { Plate, usePlateEditor } from "platejs/react";
+
+import { Editor, EditorContainer } from "@/components/ui/editor";
+
+import { AutoformatKit } from "@/components/editor/plugins/autoformat-kit.tsx";
+import { MarkdownKit } from "@/components/editor/plugins/markdown-kit.tsx";
+import { FixedToolbarKit } from "@/components/editor/plugins/fixed-toolbar-kit.tsx";
+import { FloatingToolbarKit } from "@/components/editor/plugins/floating-toolbar-kit.tsx";
 import {
   BlockquotePlugin,
   BoldPlugin,
@@ -11,16 +18,13 @@ import {
   ItalicPlugin,
   UnderlinePlugin,
 } from "@platejs/basic-nodes/react";
-import { Plate, usePlateEditor } from "platejs/react";
-
-import { BlockquoteElement } from "@/components/ui/blockquote-node";
-import { Editor, EditorContainer } from "@/components/ui/editor";
-import { FixedToolbar } from "@/components/ui/fixed-toolbar";
-import { H1Element, H2Element, H3Element } from "@/components/ui/heading-node";
-import { MarkToolbarButton } from "@/components/ui/mark-toolbar-button";
-import { ToolbarButton } from "@/components/ui/toolbar";
-import { AutoformatKit } from "@/components/editor/plugins/autoformat-kit.tsx";
-import { MarkdownKit } from "@/components/editor/plugins/markdown-kit.tsx";
+import {
+  H1Element,
+  H2Element,
+  H3Element,
+} from "@/components/ui/heading-node.tsx";
+import { BlockquoteElement } from "@/components/ui/blockquote-node.tsx";
+import { ListKit } from "@/components/editor/plugins/list-kit.tsx";
 
 const initialValue: Value = [
   {
@@ -44,6 +48,7 @@ const initialValue: Value = [
 export default function App() {
   const editor = usePlateEditor({
     plugins: [
+      ...ListKit,
       BoldPlugin,
       ItalicPlugin,
       UnderlinePlugin,
@@ -53,6 +58,8 @@ export default function App() {
       BlockquotePlugin.withComponent(BlockquoteElement),
       ...AutoformatKit,
       ...MarkdownKit,
+      ...FixedToolbarKit,
+      ...FloatingToolbarKit,
     ],
     value: () => {
       const savedValue = localStorage.getItem("installation-react-demo");
@@ -61,46 +68,18 @@ export default function App() {
   });
 
   return (
-    <div style={{ width: "500px", height: "500px", border: "solid 5px black" }}>
+    <div>
       <Plate
         editor={editor}
         onChange={({ value }) => {
+          const markdownOutput = editor.api.markdown.serialize();
+          console.info(markdownOutput);
           localStorage.setItem(
             "installation-react-demo",
             JSON.stringify(value),
           );
         }}
       >
-        <FixedToolbar className="flex justify-start gap-1 rounded-t-lg">
-          <ToolbarButton onClick={() => editor.tf.h1.toggle()}>
-            H1
-          </ToolbarButton>
-          <ToolbarButton onClick={() => editor.tf.h2.toggle()}>
-            H2
-          </ToolbarButton>
-          <ToolbarButton onClick={() => editor.tf.h3.toggle()}>
-            H3
-          </ToolbarButton>
-          <ToolbarButton onClick={() => editor.tf.blockquote.toggle()}>
-            Quote
-          </ToolbarButton>
-          <MarkToolbarButton nodeType="bold" tooltip="Bold (⌘+B)">
-            B
-          </MarkToolbarButton>
-          <MarkToolbarButton nodeType="italic" tooltip="Italic (⌘+I)">
-            I
-          </MarkToolbarButton>
-          <MarkToolbarButton nodeType="underline" tooltip="Underline (⌘+U)">
-            U
-          </MarkToolbarButton>
-          <div className="flex-1" />
-          <ToolbarButton
-            className="px-2"
-            onClick={() => editor.tf.setValue(initialValue)}
-          >
-            Reset
-          </ToolbarButton>
-        </FixedToolbar>
         <EditorContainer>
           <Editor placeholder="Type your amazing content here..." />
         </EditorContainer>
