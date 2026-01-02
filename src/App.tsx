@@ -1,51 +1,110 @@
-import { useState } from "preact/hooks";
-import preactLogo from "./assets/preact.svg";
-import { invoke } from "@tauri-apps/api/core";
+// @ts-ignore
+import * as React from "react";
+import type { Value } from "platejs";
 import "./App.css";
+import {
+  BlockquotePlugin,
+  BoldPlugin,
+  H1Plugin,
+  H2Plugin,
+  H3Plugin,
+  ItalicPlugin,
+  UnderlinePlugin,
+} from "@platejs/basic-nodes/react";
+import { Plate, usePlateEditor } from "platejs/react";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+import { BlockquoteElement } from "@/components/ui/blockquote-node";
+import { Editor, EditorContainer } from "@/components/ui/editor";
+import { FixedToolbar } from "@/components/ui/fixed-toolbar";
+import { H1Element, H2Element, H3Element } from "@/components/ui/heading-node";
+import { MarkToolbarButton } from "@/components/ui/mark-toolbar-button";
+import { ToolbarButton } from "@/components/ui/toolbar";
+import { AutoformatKit } from "@/components/editor/plugins/autoformat-kit.tsx";
+import { MarkdownKit } from "@/components/editor/plugins/markdown-kit.tsx";
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+const initialValue: Value = [
+  {
+    children: [{ text: "Title" }],
+    type: "h3",
+  },
+  {
+    children: [{ text: "This is a quote." }],
+    type: "blockquote",
+  },
+  {
+    children: [
+      { text: "With some " },
+      { bold: true, text: "bold" },
+      { text: " text for emphasis!" },
+    ],
+    type: "p",
+  },
+];
+
+export default function App() {
+  const editor = usePlateEditor({
+    plugins: [
+      BoldPlugin,
+      ItalicPlugin,
+      UnderlinePlugin,
+      H1Plugin.withComponent(H1Element),
+      H2Plugin.withComponent(H2Element),
+      H3Plugin.withComponent(H3Element),
+      BlockquotePlugin.withComponent(BlockquoteElement),
+      ...AutoformatKit,
+      ...MarkdownKit,
+    ],
+    value: () => {
+      const savedValue = localStorage.getItem("installation-react-demo");
+      return savedValue ? JSON.parse(savedValue) : initialValue;
+    },
+  });
 
   return (
-    <main class="container">
-      <h1>Welcome to Tauri + Preact</h1>
-
-      <div class="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" class="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" class="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://preactjs.com" target="_blank">
-          <img src={preactLogo} class="logo preact" alt="Preact logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and Preact logos to learn more.</p>
-
-      <form
-        class="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
+    <div style={{ width: "500px", height: "500px", border: "solid 5px black" }}>
+      <Plate
+        editor={editor}
+        onChange={({ value }) => {
+          localStorage.setItem(
+            "installation-react-demo",
+            JSON.stringify(value),
+          );
         }}
       >
-        <input
-          id="greet-input"
-          onInput={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+        <FixedToolbar className="flex justify-start gap-1 rounded-t-lg">
+          <ToolbarButton onClick={() => editor.tf.h1.toggle()}>
+            H1
+          </ToolbarButton>
+          <ToolbarButton onClick={() => editor.tf.h2.toggle()}>
+            H2
+          </ToolbarButton>
+          <ToolbarButton onClick={() => editor.tf.h3.toggle()}>
+            H3
+          </ToolbarButton>
+          <ToolbarButton onClick={() => editor.tf.blockquote.toggle()}>
+            Quote
+          </ToolbarButton>
+          <MarkToolbarButton nodeType="bold" tooltip="Bold (⌘+B)">
+            B
+          </MarkToolbarButton>
+          <MarkToolbarButton nodeType="italic" tooltip="Italic (⌘+I)">
+            I
+          </MarkToolbarButton>
+          <MarkToolbarButton nodeType="underline" tooltip="Underline (⌘+U)">
+            U
+          </MarkToolbarButton>
+          <div className="flex-1" />
+          <ToolbarButton
+            className="px-2"
+            onClick={() => editor.tf.setValue(initialValue)}
+          >
+            Reset
+          </ToolbarButton>
+        </FixedToolbar>
+        <EditorContainer>
+          <Editor placeholder="Type your amazing content here..." />
+        </EditorContainer>
+      </Plate>
+    </div>
   );
 }
-
-export default App;
