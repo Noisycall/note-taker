@@ -1,11 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { store } from "@/utils.tsx";
-
 export default function Sidebar() {
-  let files = ["file1", "file2", "file3"];
-  useEffect(() => {}, []);
+  let [files, setFiles] = useState([]);
+  useEffect(() => {
+    (async () => {
+      invoke("list_files");
+      invoke("create_new_file");
+    })();
+  }, []);
   return (
-    <div id="sidebar">
+    <div id="sidebar" style={{ width: "10em" }}>
       {files.map((file) => {
         return (
           <button
@@ -20,6 +24,7 @@ export default function Sidebar() {
           </button>
         );
       })}
+      <button className="">+</button>
     </div>
   );
 }

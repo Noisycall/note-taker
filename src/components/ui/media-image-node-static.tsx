@@ -1,3 +1,4 @@
+//@ts-ignore
 import * as React from 'react';
 
 import type { TCaptionProps, TImageElement, TResizableProps } from 'platejs';

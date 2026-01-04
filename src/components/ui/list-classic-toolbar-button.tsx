@@ -1,5 +1,6 @@
 'use client';
 
+//@ts-ignore
 import * as React from 'react';
 
 import { indentListItems, unindentListItems } from '@platejs/list-classic';

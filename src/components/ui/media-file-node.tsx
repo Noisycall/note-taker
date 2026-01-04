@@ -1,5 +1,6 @@
 'use client';
 
+//@ts-ignore
 import * as React from 'react';
 
 import type { TFileElement } from 'platejs';

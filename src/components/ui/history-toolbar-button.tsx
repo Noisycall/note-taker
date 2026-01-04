@@ -1,5 +1,6 @@
 'use client';
 
+//@ts-ignore
 import * as React from 'react';
 
 import { Redo2Icon, Undo2Icon } from 'lucide-react';

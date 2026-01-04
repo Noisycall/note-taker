@@ -1,5 +1,6 @@
 'use client';
 
+//@ts-ignore
 import * as React from 'react';
 
 import { ListStyleType, someList, toggleList } from '@platejs/list';

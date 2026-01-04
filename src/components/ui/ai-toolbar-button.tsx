@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+//@ts-ignore;
 
 import { AIChatPlugin } from '@platejs/ai/react';
 import { useEditorPlugin } from 'platejs/react';
