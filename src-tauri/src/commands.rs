@@ -1,8 +1,10 @@
-use std::path::{Path, PathBuf};
-use std::fs::{read_dir, DirEntry};
-use tauri::{AppHandle, Manager};
-use tauri::path::BaseDirectory;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::cmp::max;
+use std::fs::{read_dir, DirEntry};
+use std::path::{Path, PathBuf};
+use tauri::path::BaseDirectory;
+use tauri::{AppHandle, Manager};
 
 #[derive(Default,Serialize,Deserialize)]
 pub struct FileTree {
@@ -42,7 +44,7 @@ fn recursive_file_tree_gen(path:&String,depth:u8)->FileTree{
 
 #[tauri::command]
 pub fn list_files(app:AppHandle)->FileTree{
-    let dir_path_result = get_docs_path(app);
+    let dir_path_result = get_docs_path(&app);
     let dir_path:String;
     match dir_path_result {
         Ok(path)=>{
@@ -56,13 +58,13 @@ pub fn list_files(app:AppHandle)->FileTree{
     build_file_tree(&dir_path)
 }
 
-fn get_docs_path(app: AppHandle) -> tauri::Result<PathBuf> {
+fn get_docs_path(app: &AppHandle) -> tauri::Result<PathBuf> {
     app.path().resolve("docs", BaseDirectory::AppData)
 }
 
 #[tauri::command]
 pub fn create_new_file(app:AppHandle)->(){
-    let docs_path = get_docs_path(app).unwrap();
+    let docs_path = get_docs_path(&app).unwrap();
     let dir = read_dir(&docs_path).unwrap();
     let mut collected_dir = dir.filter_map(|x| {
         let val = x.unwrap().file_name().to_str().unwrap().to_string();
@@ -78,6 +80,47 @@ pub fn create_new_file(app:AppHandle)->(){
         new_file_path.push_str("/Untitled.md");
         std::fs::File::create(new_file_path).expect("TODO: panic message");
     }
-    // let new_file_name = Regex::new(r"\d").unwrap().find(collected_dir.iter().rev().next().unwrap()).unwrap().as_str();
-    // println!("{}",new_file_name)
+    else {
+        let val:i32 = find_highest_number_file(&collected_dir);
+        let mut new_file_path = (&docs_path.clone()).to_str().unwrap().to_owned();
+        new_file_path.push_str(&format!("/Untitled{}.md",val+1));
+        std::fs::File::create(new_file_path).expect("New file could not be created");
+    }
+}
+
+#[tauri::command]
+fn delete_file(app:AppHandle,path:String)->bool{
+    let docs_path = get_docs_path(&app).expect("Could not resolve docs path while deleting");
+    let file_path = Path::new(&path);
+    if file_path.starts_with(docs_path) {
+        std::fs::remove_file(file_path).expect("File deletion error");
+        return true
+    }
+    false
+}
+
+mod tests{
+    use crate::commands::find_highest_number_file;
+
+    #[test]
+    fn test1(){
+        let collected_dir:Vec<String> = vec!["Untitled.md".to_string(),"Untitled1.md".to_string(),"Untitled1234.md".to_string()];
+        let val: i32 = find_highest_number_file(&collected_dir);
+        assert_eq!(val,1234)
+    }
+}
+
+fn find_highest_number_file(collected_dir: &Vec<String>) -> i32 {
+    collected_dir.iter().fold(1, |b, x1| {
+        let matcher = Regex::new(r"Untitled(\d+)\.md").unwrap();
+        let matched = matcher.captures(x1);
+        match matched {
+            Some(caps) => {
+                let temp = caps.get(1).unwrap();
+                return max(temp.as_str().parse::<i32>().expect("Should be a number"), b);
+            }
+            _ => {}
+        }
+        return b;
+    })
 }

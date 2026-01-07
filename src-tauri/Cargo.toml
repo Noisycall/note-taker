@@ -22,3 +22,4 @@ tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 tauri-plugin-fs = "2"
+regex = "1.12.2"
