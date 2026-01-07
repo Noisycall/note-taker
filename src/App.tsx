@@ -25,27 +25,12 @@ import {
 } from "@/components/ui/heading-node.tsx";
 import { BlockquoteElement } from "@/components/ui/blockquote-node.tsx";
 import { ListKit } from "@/components/editor/plugins/list-kit.tsx";
-
-const initialValue: Value = [
-  {
-    children: [{ text: "Title" }],
-    type: "h3",
-  },
-  {
-    children: [{ text: "This is a quote." }],
-    type: "blockquote",
-  },
-  {
-    children: [
-      { text: "With some " },
-      { bold: true, text: "bold" },
-      { text: " text for emphasis!" },
-    ],
-    type: "p",
-  },
-];
+import { invoke } from "@tauri-apps/api/core";
+import { store } from "@/utils.tsx";
+import { useSnapshot } from "valtio/react";
 
 export default function App() {
+  let { selectedFile } = useSnapshot(store);
   const editor = usePlateEditor({
     plugins: [
       ...ListKit,
@@ -61,23 +46,23 @@ export default function App() {
       ...FixedToolbarKit,
       ...FloatingToolbarKit,
     ],
-    value: () => {
-      const savedValue = localStorage.getItem("installation-react-demo");
-      return savedValue ? JSON.parse(savedValue) : initialValue;
+
+    onReady: ({ value }) => {
+      console.info("Editor ready with loaded value:", value);
     },
   });
 
   return (
-    <div>
+    <div style={{ visibility: selectedFile ? "visible" : "hidden" }}>
       <Plate
         editor={editor}
-        onChange={({ value }) => {
+        onChange={({ editor }) => {
           const markdownOutput = editor.api.markdown.serialize();
           console.info(markdownOutput);
-          localStorage.setItem(
-            "installation-react-demo",
-            JSON.stringify(value),
-          );
+          invoke("set_file", {
+            path: store.selectedFile,
+            value: markdownOutput,
+          });
         }}
       >
         <EditorContainer>

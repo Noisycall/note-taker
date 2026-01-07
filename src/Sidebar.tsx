@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { store } from "@/utils.tsx";
 import { invoke } from "@tauri-apps/api/core";
+import { PlateEditor, useEditorRef } from "platejs/react";
+import { MarkdownPlugin } from "@platejs/markdown";
 
-function FileTreeVis(
-  props: { files: any; root?: boolean } = { files: {}, root: false },
-) {
+function FileTreeVis(props: {
+  files: any;
+  root?: boolean;
+  editor: PlateEditor;
+}) {
   let file = props.files;
-  console.log(file);
   const padLeft = "10px";
   if (!file.is_dir) {
     return (
@@ -19,9 +22,17 @@ function FileTreeVis(
         }}
         key={file.path_from_docs}
         id={file.path_from_docs}
-        onClick={(evt) => {
+        onClick={async (evt) => {
+          console.log("isFallback", props.editor);
+          console.log("clicked");
           store.selectedFile = evt.currentTarget.id;
           console.log(store);
+          let val = (await invoke("get_file", {
+            path: evt.currentTarget.id,
+          })) as string;
+          console.log(val);
+          let markAPI = props.editor?.getApi(MarkdownPlugin);
+          props.editor?.tf.setValue(markAPI?.markdown.deserialize(val));
         }}
       >
         {file.name}
@@ -38,7 +49,7 @@ function FileTreeVis(
       >
         {props.root ? "" : <div style={{ width: "100%" }}>{file.name}</div>}
         {file.files.map((filer: any) => {
-          return <FileTreeVis files={filer} />;
+          return <FileTreeVis files={filer} editor={props.editor} />;
         })}
       </div>
     );
@@ -47,17 +58,17 @@ function FileTreeVis(
 
 export default function Sidebar() {
   let [files, setFiles] = useState({ files: [] } as any);
+  let editor = useEditorRef();
   useEffect(() => {
     (async () => {
       let val = await invoke("list_files");
       // @ts-ignore
       setFiles(val);
-      console.log(val);
     })();
   }, []);
   return (
     <div id="sidebar" style={{ width: "10em" }}>
-      <FileTreeVis files={files} root={true} />
+      <FileTreeVis files={files} root={true} editor={editor} />
       <button
         style={{
           width: "100%",

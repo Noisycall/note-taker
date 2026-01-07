@@ -40,7 +40,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![greet])
-        .invoke_handler(tauri::generate_handler![commands::list_files,commands::create_new_file])
+        .invoke_handler(tauri::generate_handler![commands::list_files,commands::create_new_file,commands::get_file,commands::set_file])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
