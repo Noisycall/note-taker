@@ -7,11 +7,17 @@ function FileTreeVis(
 ) {
   let file = props.files;
   console.log(file);
+  const padLeft = "10px";
   if (!file.is_dir) {
     return (
       <button
+        style={{
+          width: "100%",
+          textAlign: "left",
+          paddingLeft: padLeft,
+          border: "solid 2px red",
+        }}
         key={file.path_from_docs}
-        style={{ width: "100%" }}
         id={file.path_from_docs}
         onClick={(evt) => {
           store.selectedFile = evt.currentTarget.id;
@@ -23,8 +29,14 @@ function FileTreeVis(
     );
   } else {
     return (
-      <div className="relative left-2">
-        {props.root ? "" : <span className="relative left-2">{file.name}</span>}
+      <div
+        style={{
+          width: "100%",
+          paddingLeft: padLeft,
+          border: "dashed 2px black",
+        }}
+      >
+        {props.root ? "" : <div style={{ width: "100%" }}>{file.name}</div>}
         {file.files.map((filer: any) => {
           return <FileTreeVis files={filer} />;
         })}
