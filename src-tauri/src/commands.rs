@@ -53,7 +53,6 @@ pub fn list_files(app: AppHandle) -> FileTree {
     let dir_path: String;
     match dir_path_result {
         Ok(path) => {
-            println!("{:?}", path);
             dir_path = path.to_str().unwrap().to_string()
         }
         Err(e) => {
@@ -81,7 +80,6 @@ pub fn create_new_file(app: AppHandle) -> () {
         })
         .collect::<Vec<_>>();
     collected_dir.sort();
-    println!("collected_dir {:?}", collected_dir);
     if collected_dir.len() <= 0 {
         let mut new_file_path = (&docs_path.clone()).to_str().unwrap().to_owned();
         new_file_path.push_str("/Untitled.md");
@@ -103,9 +101,7 @@ fn path_in_docs(app: &AppHandle, path: &String) -> bool {
 #[tauri::command]
 pub fn get_file(app: AppHandle, path: String) -> String {
     let val = path_in_docs(&app, &path);
-    println!("Is path in docs?{}",val);
     if val {
-        println!("reached get doc");
         return fs::read_to_string(&path).unwrap();
     }
     "".to_string()
@@ -115,7 +111,6 @@ pub fn get_file(app: AppHandle, path: String) -> String {
 pub fn set_file(app:AppHandle,path:String,value:String)->bool{
     let val = path_in_docs(&app,&path);
     if val {
-        println!("path and val {},{}",path,value);
         let mut writer = fs::OpenOptions::new().write(true).truncate(true).open(path).expect("Failed to open file in write mode");
         writer.write_all(value.as_ref()).expect("Failed to write file");
         return true
@@ -125,7 +120,7 @@ pub fn set_file(app:AppHandle,path:String,value:String)->bool{
 
 
 #[tauri::command]
-fn delete_file(app: AppHandle, path: String) -> bool {
+pub fn delete_file(app: AppHandle, path: String) -> bool {
     let file_path = Path::new(&path);
     if path_in_docs(&app, &path) {
         fs::remove_file(file_path).expect("File deletion error");
