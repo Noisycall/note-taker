@@ -27,6 +27,7 @@ reqwest_dav = "0.3.3"
 tokio = {version = "1.50.0", features = ["full"]}
 tokio-macros = "2.6.1"
 keyring = "4.0.0"
+log = "0.4.29"
 
 [dev-dependencies]
 lazy_static = "1.5.0"
