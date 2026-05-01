@@ -11,6 +11,9 @@ struct WebdavClient {
 
 //TODO: Refactor to use &str
 pub fn normalize_note_path(prefix: String, note_path: String) -> Result<String, String> {
+    if note_path.contains(&prefix){
+        return Ok(note_path);
+    }
     let mut mutated_note_path = PathBuf::from(note_path);
     if mutated_note_path.is_absolute() {
         mutated_note_path = mutated_note_path.strip_prefix("/").unwrap().to_path_buf();
@@ -162,6 +165,15 @@ impl WebdavClient {
             }
         }
     }
+    //TODO: There needs to be an easy way to find a note? Ideally we should always have a note path
+    pub async fn upsert_note(&self,note_name:&str,note_body:&str)->Result<(),String>{
+
+        return Ok(())
+    }
+
+    // pub async fn note_exists(&self, note_name:&str)->bool{
+    //     self.client.get(normalize_note_path(self.notes_path_from_root,note_name))
+    // }
 }
 
 #[cfg(test)]
