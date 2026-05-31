@@ -3,11 +3,14 @@ import { store } from "@/utils.tsx";
 import { invoke } from "@tauri-apps/api/core";
 import { PlateEditor, useEditorRef } from "platejs/react";
 import { MarkdownPlugin } from "@platejs/markdown";
+import { useContextMenu } from "@/hooks/useContextMenu.ts";
+import { ContextMenu } from "@/components/ContextMenu.tsx";
 
 function FileTreeVis(props: {
   files: any;
   root?: boolean;
   editor: PlateEditor;
+  handleContextMenu: any;
 }) {
   let file = props.files;
   const padLeft = "10px";
@@ -34,6 +37,9 @@ function FileTreeVis(props: {
           let markAPI = props.editor?.getApi(MarkdownPlugin);
           props.editor?.tf.setValue(markAPI?.markdown.deserialize(val));
         }}
+        onContextMenu={(e) => {
+          props.handleContextMenu(e, file.path_from_docs);
+        }}
       >
         {file.name}
       </button>
@@ -49,7 +55,13 @@ function FileTreeVis(props: {
       >
         {props.root ? "" : <div style={{ width: "100%" }}>{file.name}</div>}
         {file.files.map((filer: any) => {
-          return <FileTreeVis files={filer} editor={props.editor} />;
+          return (
+            <FileTreeVis
+              files={filer}
+              editor={props.editor}
+              handleContextMenu={props.handleContextMenu}
+            />
+          );
         })}
       </div>
     );
@@ -58,6 +70,10 @@ function FileTreeVis(props: {
 
 export default function Sidebar() {
   let [files, setFiles] = useState({ files: [] } as any);
+  let [random, setrandom] = useState(false);
+  const { menuState, handleContextMenu, handleAction } = useContextMenu(() => {
+    setrandom(!random);
+  });
   let editor = useEditorRef();
   useEffect(() => {
     (async () => {
@@ -65,10 +81,15 @@ export default function Sidebar() {
       // @ts-ignore
       setFiles(val);
     })();
-  }, []);
+  }, [random]);
   return (
     <div id="sidebar" style={{ width: "10em" }}>
-      <FileTreeVis files={files} root={true} editor={editor} />
+      <FileTreeVis
+        files={files}
+        root={true}
+        editor={editor}
+        handleContextMenu={handleContextMenu}
+      />
       <button
         style={{
           width: "100%",
@@ -83,6 +104,15 @@ export default function Sidebar() {
       >
         +
       </button>
+      {/* Render the menu only if open */}
+      {menuState.isOpen && (
+        <ContextMenu
+          x={menuState.x}
+          y={menuState.y}
+          onAction={handleAction}
+          onClose={() => {}} // Handled by hook
+        />
+      )}
     </div>
   );
 }
