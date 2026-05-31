@@ -52,9 +52,7 @@ pub fn list_files(app: AppHandle) -> FileTree {
     let dir_path_result = get_docs_path(&app);
     let dir_path: String;
     match dir_path_result {
-        Ok(path) => {
-            dir_path = path.to_str().unwrap().to_string()
-        }
+        Ok(path) => dir_path = path.to_str().unwrap().to_string(),
         Err(e) => {
             panic!("{}", e)
         }
@@ -108,16 +106,21 @@ pub fn get_file(app: AppHandle, path: String) -> String {
 }
 
 #[tauri::command]
-pub fn set_file(app:AppHandle,path:String,value:String)->bool{
-    let val = path_in_docs(&app,&path);
+pub fn set_file(app: AppHandle, path: String, value: String) -> bool {
+    let val = path_in_docs(&app, &path);
     if val {
-        let mut writer = fs::OpenOptions::new().write(true).truncate(true).open(path).expect("Failed to open file in write mode");
-        writer.write_all(value.as_ref()).expect("Failed to write file");
-        return true
+        let mut writer = fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(path)
+            .expect("Failed to open file in write mode");
+        writer
+            .write_all(value.as_ref())
+            .expect("Failed to write file");
+        return true;
     }
     false
 }
-
 
 #[tauri::command]
 pub fn delete_file(app: AppHandle, path: String) -> bool {
