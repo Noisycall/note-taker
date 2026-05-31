@@ -1,11 +1,13 @@
+use crate::commands::FileTree;
+use crate::tree::{IntoTree, Tree, Treeable};
 use log::debug;
-use reqwest_dav::list_cmd::ListEntity;
+use reqwest_dav::list_cmd::{ListEntity, ListFile};
 use reqwest_dav::re_exports::reqwest::{Response, StatusCode};
 use reqwest_dav::{Auth, Client, ClientBuilder, Depth, Error};
 use std::path::PathBuf;
 
 #[derive(Debug)]
-struct WebdavClient {
+pub struct WebdavClient {
     client: Client,
     notes_path_from_root: String,
 }
@@ -106,24 +108,26 @@ impl WebdavClient {
             )),
         }
     }
-    pub async fn list_notes(&self) -> Result<Vec<String>, String> {
+    pub async fn list_notes(&self) -> Result<Vec<ListEntity>, String> {
         let mut notes = Vec::<String>::new();
         let val = &self
             .client
-            .list(&self.notes_path_from_root, Depth::Number(1))
+            .list(&self.notes_path_from_root, Depth::Number(50))
             .await;
         match val {
-            Ok(list) => list.iter().for_each(|note| match note {
-                ListEntity::File(file) => notes.push(file.href.to_string()),
-                ListEntity::Folder(_) => {}
-            }),
+            // Ok(list) => list.iter().for_each(|note| match note {
+            //     ListEntity::File(file) => notes.push(file.href.to_string()),
+            //     ListEntity::Folder(_) => {}
+            // }),
+            Ok(list) => {
+                return Ok(list.to_owned());
+            }
             Err(e) => {
                 let err = format!("Error while reading notes list: {}", e);
                 debug!("{}", err);
-                return Err(err);
+                Err(err)
             }
         }
-        Ok(notes)
     }
     pub async fn build_client(
         user: String,
@@ -229,15 +233,39 @@ impl WebdavClient {
             Err(e) => Err(format!("Could not get note: {}", e)),
         }
     }
+
+    pub fn get_notes_path(&self) -> &str {
+        &self.notes_path_from_root
+    }
+}
+impl Treeable for ListFile {
+    fn get_tree_id(&self) -> String {
+        return self.href.to_string();
+    }
+}
+
+pub async fn get_webdav_tree(client: &WebdavClient) -> Result<Tree<ListFile>, String> {
+    let mut tr = Tree::<ListFile>::default();
+    let val = client.list_notes().await;
+    match val {
+        Ok(x) => x.into_iter().for_each(|x1| match x1 {
+            ListEntity::File(xer) => {
+                tr.add_node(xer);
+            }
+            ListEntity::Folder(_) => {}
+        }),
+        Err(err) => return Err(format!("Could not convert to tree: {}", err)),
+    }
+    Ok(tr)
 }
 
 #[cfg(test)]
 mod webdav_tests {
     use lazy_static::lazy_static;
     lazy_static! {
-        pub static ref USERNAME: String = std::env::var("USERNAME").unwrap();
-        pub static ref PASS: String = std::env::var("PASS").unwrap();
-        pub static ref DOMAIN: String = std::env::var("DOMAIN").unwrap();
+        pub static ref USERNAME: String = std::env::var("WEBDAV_USERNAME").unwrap();
+        pub static ref PASS: String = std::env::var("WEBDAV_PASS").unwrap();
+        pub static ref DOMAIN: String = std::env::var("WEBDAV_DOMAIN").unwrap();
     }
     const NOTES_PATH: &str = "/notes";
     use crate::webdav::WebdavClient;
@@ -252,7 +280,15 @@ mod webdav_tests {
             .set_host(DOMAIN.to_string())
             .set_auth(Auth::Basic(USERNAME.to_string(), PASS.to_owned()))
             .build()?;
-
+        println!(
+            "{:?}",
+            client
+                .list_raw(
+                    &format!("/remote.php/dav/files/{}/", *USERNAME),
+                    Depth::Infinity
+                )
+                .await
+        );
         // list files
         println!(
             "{}",
@@ -260,7 +296,7 @@ mod webdav_tests {
                 &client
                     .list(
                         &format!("/remote.php/dav/files/{}/", *USERNAME),
-                        Depth::Number(1)
+                        Depth::Infinity
                     )
                     .await?
             )
@@ -287,7 +323,7 @@ mod webdav_tests {
         // build a client
         let client = ClientBuilder::new()
             .set_host(DOMAIN.to_string())
-            .set_auth(Auth::Basic(USERNAME.to_owned(), PASS.to_owned()))
+            .set_auth(Auth::Basic(USERNAME.to_string(), PASS.to_string()))
             .build()?;
 
         // create content for the test file
@@ -341,7 +377,9 @@ mod webdav_tests {
         )
         .await
         .unwrap();
-        assert!(client.list_notes().await.unwrap().len() > 0);
+        let val = client.list_notes().await.unwrap();
+        println!("{}", serde_json::to_string(&val).unwrap());
+        assert!(val.len() > 0);
     }
 
     #[tokio::test]
@@ -421,5 +459,33 @@ mod webdav_tests {
             client.get_note("get_note_test.md").await,
             Ok("This is the note content".to_string())
         );
+    }
+}
+
+#[cfg(test)]
+mod test_webdav_into_tree {
+    use lazy_static::lazy_static;
+    lazy_static! {
+        pub static ref USERNAME: String = std::env::var("WEBDAV_USERNAME").unwrap();
+        pub static ref PASS: String = std::env::var("WEBDAV_PASS").unwrap();
+        pub static ref DOMAIN: String = std::env::var("WEBDAV_DOMAIN").unwrap();
+    }
+    const NOTES_PATH: &str = "/notes";
+    use crate::webdav::{get_webdav_tree, WebdavClient};
+
+    #[tokio::test]
+    async fn test1() {
+        let client = WebdavClient::build_client(
+            USERNAME.to_string(),
+            PASS.to_string(),
+            DOMAIN.to_string(),
+            NOTES_PATH.to_string(),
+        )
+        .await
+        .unwrap();
+        let val = get_webdav_tree(&client).await.unwrap();
+        println!("{:#?}", val);
+        println!("{}", val.print());
+        println!("{}", val.build_disp_tree().unwrap());
     }
 }
