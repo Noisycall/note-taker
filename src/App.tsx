@@ -53,7 +53,12 @@ export default function App() {
   });
 
   return (
-    <div style={{ visibility: selectedFile ? "visible" : "hidden" }}>
+    <div
+      style={{
+        visibility: selectedFile ? "visible" : "hidden",
+        maxWidth: "100vw",
+      }}
+    >
       <Plate
         editor={editor}
         onChange={({ editor }) => {
