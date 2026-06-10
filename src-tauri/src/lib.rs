@@ -7,6 +7,7 @@ use webdav_frontend_bindings::{get_webdav_notes_tree, init_webdav_with_creds};
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod commands;
+mod file_cache;
 mod state;
 pub mod tree;
 pub mod webdav;
