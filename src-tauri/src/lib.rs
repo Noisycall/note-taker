@@ -23,7 +23,7 @@ pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
             create_doc_if_not_exist(app).expect("TODO: panic message");
-            app.manage(tokio::sync::Mutex::new(AppData::default()));
+            app.manage(tokio::sync::Mutex::new(AppData::new()));
             Ok(())
         })
         .plugin(tauri_plugin_fs::init())

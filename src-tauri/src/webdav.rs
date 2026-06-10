@@ -6,7 +6,7 @@ use reqwest_dav::re_exports::reqwest::{Response, StatusCode};
 use reqwest_dav::{Auth, Client, ClientBuilder, Depth, Error};
 use std::path::PathBuf;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct WebdavClient {
     client: Client,
     notes_path_from_root: String,
@@ -115,10 +115,6 @@ impl WebdavClient {
             .list(&self.notes_path_from_root, Depth::Number(50))
             .await;
         match val {
-            // Ok(list) => list.iter().for_each(|note| match note {
-            //     ListEntity::File(file) => notes.push(file.href.to_string()),
-            //     ListEntity::Folder(_) => {}
-            // }),
             Ok(list) => {
                 return Ok(list.to_owned());
             }

@@ -1,8 +1,7 @@
+use crate::file_cache::{InMemoryFileCache, NoteTakerFile};
 use crate::state::AppState;
-use crate::tree::Tree;
 use crate::webdav::{get_webdav_tree, WebdavClient};
 use reqwest_dav::re_exports::serde_json;
-use serde::Deserialize;
 use tauri::State;
 
 #[derive(Debug)]
@@ -46,6 +45,9 @@ pub async fn init_webdav_with_creds(
         .webdav_frontend
         .init(username, password, host, notes_path)
         .await;
+    stater.file_cache = Some(InMemoryFileCache::new(
+        stater.webdav_frontend.client.clone().unwrap(),
+    ));
     println!(
         "{:?}",
         serde_json::to_string(
@@ -58,6 +60,7 @@ pub async fn init_webdav_with_creds(
                 .await?
         )
     );
+
     return res;
 }
 
