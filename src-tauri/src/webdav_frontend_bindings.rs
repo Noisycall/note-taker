@@ -82,6 +82,12 @@ pub async fn get_webdav_notes_tree(state: State<'_, AppState>) -> Result<String,
     Err("Could not get notes".to_string())
 }
 
+#[tauri::command]
+pub async fn get_note(state: State<'_, AppState>, id: String) -> Result<NoteTakerFile, String> {
+    let mut stater = state.lock().await;
+    stater.file_cache.as_mut().unwrap().get_file(&id).await
+}
+
 //TODO: Sync filesystem and local
 //TODO: Better file tree system
 //TODO: Local files module
