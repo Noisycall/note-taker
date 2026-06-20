@@ -7,14 +7,17 @@ import { useContextMenu } from "@/hooks/useContextMenu.ts";
 import { ContextMenu } from "@/components/ContextMenu.tsx";
 
 function FileTreeVis(props: {
-  files: any;
+  files?: NoteTree;
   root?: boolean;
+  file?: NoteTreeEntry;
+  fileName?: string;
   editor: PlateEditor;
   handleContextMenu: any;
 }) {
-  let file = props.files;
+  let files = props.files;
+  let file = props.file;
   const padLeft = "10px";
-  if (!file.is_dir) {
+  if (file && file.href) {
     return (
       <button
         style={{
@@ -23,25 +26,23 @@ function FileTreeVis(props: {
           paddingLeft: padLeft,
           border: "solid 2px red",
         }}
-        key={file.path_from_docs}
-        id={file.path_from_docs}
+        key={file.href}
+        id={file.href}
         onClick={async (evt) => {
           console.log("isFallback", props.editor);
           console.log("clicked");
           store.selectedFile = evt.currentTarget.id;
           console.log(store);
-          let val = (await invoke("get_file", {
-            path: evt.currentTarget.id,
-          })) as string;
+          let val = (await get_note(file)).contents;
           console.log(val);
           let markAPI = props.editor?.getApi(MarkdownPlugin);
           props.editor?.tf.setValue(markAPI?.markdown.deserialize(val));
         }}
         onContextMenu={(e) => {
-          props.handleContextMenu(e, file.path_from_docs);
+          props.handleContextMenu(e, file.href);
         }}
       >
-        {file.name}
+        {props.fileName}
       </button>
     );
   } else {
@@ -53,37 +54,71 @@ function FileTreeVis(props: {
           border: "dashed 2px black",
         }}
       >
-        {props.root ? "" : <div style={{ width: "100%" }}>{file.name}</div>}
-        {file.files.map((filer: any) => {
-          return (
-            <FileTreeVis
-              files={filer}
-              editor={props.editor}
-              handleContextMenu={props.handleContextMenu}
-            />
-          );
-        })}
+        {props.root ? (
+          ""
+        ) : (
+          <div style={{ width: "100%" }}>{props.fileName}</div>
+        )}
+        {files &&
+          Object.entries(files).map((entry) => {
+            return (
+              <FileTreeVis
+                //@ts-ignore
+                files={entry[1].href ? null : entry[1]}
+                //@ts-ignore
+                file={entry[1].href ? entry[1] : null}
+                fileName={decodeURI(entry[0]).split(".md")[0]}
+                editor={props.editor}
+                handleContextMenu={props.handleContextMenu}
+              />
+            );
+          })}
       </div>
     );
   }
 }
 
+type NoteTreeEntry = {
+  content_length: number;
+  content_type: string;
+  href: string;
+  last_modified: string;
+  tag: string;
+};
+
+interface NoteTree {
+  [note_name: string]: NoteTreeEntry | NoteTree;
+}
+
+interface Note {
+  id: string;
+  contents: string;
+}
+
+const get_note_tree = async (): Promise<NoteTree> => {
+  return JSON.parse(await invoke("get_webdav_notes_tree")) as NoteTree;
+};
+const get_note = async (val: NoteTreeEntry): Promise<Note> => {
+  return await invoke("get_note", {
+    id: val.href,
+  });
+};
 export default function Sidebar() {
-  let [files, setFiles] = useState({ files: [] } as any);
-  let [random, setrandom] = useState(false);
+  let [files, setFiles] = useState({} as NoteTree);
+  let [random, setRandom] = useState(false);
   const { menuState, handleContextMenu, handleAction } = useContextMenu(() => {
-    setrandom(!random);
+    setRandom(!random);
   });
   let editor = useEditorRef();
   useEffect(() => {
     (async () => {
-      let val = await invoke("list_files");
+      let val = await get_note_tree();
       // @ts-ignore
       setFiles(val);
     })();
   }, [random]);
   return (
-    <div id="sidebar" style={{ width: "10em" }}>
+    <div id="sidebar" style={{ width: "15em" }}>
       <FileTreeVis
         files={files}
         root={true}
@@ -99,7 +134,7 @@ export default function Sidebar() {
         }}
         onClick={async () => {
           await invoke("create_new_file");
-          setFiles(await invoke("list_files"));
+          setFiles(await get_note_tree());
         }}
       >
         +
