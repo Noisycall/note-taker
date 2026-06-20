@@ -48,19 +48,18 @@ pub async fn init_webdav_with_creds(
     stater.file_cache = Some(InMemoryFileCache::new(
         stater.webdav_frontend.client.clone().unwrap(),
     ));
-    println!(
-        "{:?}",
-        serde_json::to_string(
-            &stater
-                .webdav_frontend
-                .client
-                .as_ref()
-                .unwrap()
-                .list_notes()
-                .await?
-        )
-    );
-
+    // println!(
+    //     "{:?}",
+    //     serde_json::to_string(
+    //         &stater
+    //             .webdav_frontend
+    //             .client
+    //             .as_ref()
+    //             .unwrap()
+    //             .list_notes()
+    //             .await?
+    //     )
+    // );
     return res;
 }
 

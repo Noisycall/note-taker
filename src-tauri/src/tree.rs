@@ -158,7 +158,6 @@ impl<T: Treeable + Serialize + Clone> Tree<T> {
             range = 0..parent_id_split.len() - 2;
         }
         let parent_id = parent_id_split[range].join(&self.separator.to_string());
-        println!("{}", parent_id);
         self.get_node(parent_id)
     }
     fn get_parent_node_mutable(&mut self, id: String) -> Option<&mut TreeNode> {
