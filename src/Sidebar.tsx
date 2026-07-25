@@ -32,10 +32,13 @@ function FileTreeVis(props: {
           console.log("isFallback", props.editor);
           console.log("clicked");
           store.selectedFile = evt.currentTarget.id;
-          console.log(store);
+          store.loaded = false;
           let val = (await get_note(file)).contents;
+          store.loaded = true;
+          store.deserialize = false;
           console.log(val);
           let markAPI = props.editor?.getApi(MarkdownPlugin);
+          store.deserialize = true;
           props.editor?.tf.setValue(markAPI?.markdown.deserialize(val));
         }}
         onContextMenu={(e) => {

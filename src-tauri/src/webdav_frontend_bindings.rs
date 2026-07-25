@@ -1,7 +1,6 @@
 use crate::file_cache::{InMemoryFileCache, NoteTakerFile};
 use crate::state::AppState;
 use crate::webdav::{get_webdav_tree, WebdavClient};
-use reqwest_dav::re_exports::serde_json;
 use tauri::State;
 
 #[derive(Debug)]
@@ -85,6 +84,24 @@ pub async fn get_webdav_notes_tree(state: State<'_, AppState>) -> Result<String,
 pub async fn get_note(state: State<'_, AppState>, id: String) -> Result<NoteTakerFile, String> {
     let mut stater = state.lock().await;
     stater.file_cache.as_mut().unwrap().get_file(&id).await
+}
+
+#[tauri::command]
+pub async fn update_note(state: State<'_,AppState>,id:String,contents:String)->Result<(),String>{
+    let mut stater = state.lock().await;
+    let mut prev_contents;
+    {
+        let file_cache = stater.file_cache.as_mut().unwrap();
+         prev_contents= file_cache.get_file(&id).await?;
+        file_cache.set_file(&id, &contents);
+    }
+    let client = &stater.webdav_frontend;
+    if let Err(val) = client.client.clone().unwrap().upsert_note(&id,&contents).await {
+        let file_cache = stater.file_cache.as_mut().unwrap();
+        file_cache.set_file(&id,&prev_contents.contents);
+        return Err(format!("Could not update note: {}", val).to_string());
+    }
+    return Ok(());
 }
 
 //TODO: Sync filesystem and local

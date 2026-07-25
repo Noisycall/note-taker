@@ -3,7 +3,7 @@ use std::error::Error;
 use std::fs::exists;
 use tauri::path::BaseDirectory;
 use tauri::{App, Manager};
-use webdav_frontend_bindings::{get_note, get_webdav_notes_tree, init_webdav_with_creds};
+use webdav_frontend_bindings::{get_note, get_webdav_notes_tree, init_webdav_with_creds,update_note};
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod commands;
@@ -37,7 +37,8 @@ pub fn run() {
             commands::delete_file,
             init_webdav_with_creds,
             get_webdav_notes_tree,
-            get_note
+            get_note,
+            update_note,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

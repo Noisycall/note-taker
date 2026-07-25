@@ -43,4 +43,12 @@ impl InMemoryFileCache {
             Err(err) => Err(format!("Could not get file in InMemoryFileCache: {}", err)),
         }
     }
+
+    pub fn set_file(&mut self,id:&str,contents:&str){
+        let note_taker_file = NoteTakerFile{
+            id:id.to_string(),
+            contents:contents.to_string()
+        };
+        self.files.insert(id.to_string(),note_taker_file);
+    }
 }

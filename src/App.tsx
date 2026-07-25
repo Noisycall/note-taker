@@ -28,9 +28,11 @@ import { ListKit } from "@/components/editor/plugins/list-kit.tsx";
 import { invoke } from "@tauri-apps/api/core";
 import { store } from "@/utils.tsx";
 import { useSnapshot } from "valtio/react";
-
+import { useRef } from "react";
+let debounceTimeoutID = -1;
 export default function App() {
-  let { selectedFile } = useSnapshot(store);
+  let { selectedFile, loaded, deserialize } = useSnapshot(store);
+  let ref = useRef(null);
   const editor = usePlateEditor({
     plugins: [
       ...ListKit,
@@ -54,6 +56,7 @@ export default function App() {
 
   return (
     <div
+      ref={ref}
       style={{
         visibility: selectedFile ? "visible" : "hidden",
         maxWidth: "100vw",
@@ -62,16 +65,29 @@ export default function App() {
       <Plate
         editor={editor}
         onChange={({ editor }) => {
+          if (!editor.api.isFocused() && !loaded && deserialize) {
+            deserialize = false;
+            return;
+          }
           const markdownOutput = editor.api.markdown.serialize();
-          console.info(markdownOutput);
-          invoke("set_file", {
-            path: store.selectedFile,
-            value: markdownOutput,
-          });
+          clearTimeout(debounceTimeoutID);
+          debounceTimeoutID = setTimeout(() => {
+            console.info("Saving!", "content -> ", markdownOutput);
+            invoke("update_note", {
+              id: store.selectedFile,
+              contents: markdownOutput,
+            }).catch((err) => {
+              console.error("Could not update note: ", err);
+            });
+          }, 250);
         }}
       >
         <EditorContainer>
-          <Editor placeholder="Type your amazing content here..." />
+          {loaded ? (
+            <Editor placeholder="Type your amazing content here..." />
+          ) : (
+            <div>Loading...</div>
+          )}
         </EditorContainer>
       </Plate>
     </div>
